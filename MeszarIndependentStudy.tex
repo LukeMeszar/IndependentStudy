@@ -1,0 +1,167 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{natbib}
+\usepackage[table]{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\usepackage{cleveref}
+\theoremstyle{definition}
+\newtheorem{example}{Example}[section]
+
+\newcommand{\specialcell}[2][c]{%
+  \begin{tabular}[#1]{@{}l@{}}#2\end{tabular}}
+\newcommand{\Hb}{\mathbf{H}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\Ib}{\mathbf{I}}
+\newcommand{\Tb}{\mathbf{T}}
+\newcommand{\Ub}{\mathbf{U}}
+\newcommand{\Xb}{\mathbf{X}}
+\newcommand{\Yb}{\mathbf{Y}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\G}{\mathcal{G} }
+\newcommand{\func}[3]{#1: #2 \to #3}
+\title{Persistent Analysis of Coupling-Networks Properties}
+\author{Luke Meszar}
+\date{}
+\bibliographystyle{plain} 
+\newcommand{\attrib}[1]{%
+\nopagebreak{\center\footnotesize #1\par}}
+\begin{document}
+
+\maketitle
+\tableofcontents
+\pagebreak
+\begin{abstract}
+    Something about power systems, transfer entropy, etc
+\end{abstract}
+\section{Introduction}
+This semester we 
+\section{Data}\label{sec:data}
+The data used to simulate a power system was creating using a tool called COSMIC \cite{song2016dynamic}. This tool models a power system under cascading failure using differential algebraic equations. The specific data used was the Polish 2383 bus IEEE test case where line 23 and 51 randomly failed at the same time. This data was chosen because it led to significant power loss which is the behavior we wanted to study. We had data for the angle $\delta$ of each generator at a timestep of 0.001 seconds for 146.64 seconds. The values of $\delta$ are the angle of each generator from a reference angle.  
+\section{Information Theory}
+In this section we will discuss some of the mathematics behind information theory and transfer entropy. In this section we reference information in \cite{bossomaier2016introduction}.
+\subsection{Entropy}
+Information entropy is defined as the average amount of information in a set of random events. Mathematically, we define entropy $\Hb(X)$ of a random variable $X$ to be
+\[\Hb(X) = \E\{\eta(x)\} = -\sum_{x \in \Omega_x}p(x)\log_2p(x).\]
+A way to think about $\eta(x)$ is that is captures how much information you gain by knowing that $x$ has occurred. As an example, assume we live in a place near the equator. Then, knowing that it is dark at midnight does not tell us nothing since it is always dark at midnight. However, knowing that it is dark at noon conveys a lot of information since it is an indicator of a solar eclipse.
+
+For an example, consider the following time series:
+\[X = \{1,0,1,1,0\}.\]
+Then we calculate its entropy as 
+\begin{align*}
+&-\left(p(X = 0)\log_2p(X = 0)+p(X = 1)\log_2p(X = 1)\right) \\
+&-(0.4\log_2 0.4 + 0.6\log_2 0.6) = 0.971. 
+\end{align*}
+We can also define conditional entropy. This describes the average information in a set of events given we have some other information. It is defined as
+\[\Hb(X | Y) = \sum_{y \in \Omega_y}p(y) H(X|y)\]
+where
+\[H(X|y) = -\sum_{x \in \Omega_x} p(x|y)\log_2 p(x|y).\]
+\subsection{Mutual Information}
+Given two random variables $X$ and $Y,$ the mutual information of the two is the statistical dependence between them. The mutual information $\Ib(X : Y)$ is defined as 
+\[\Ib(X : Y) = \Hb(X) - \Hb(X | Y) = \Hb(Y) - \Hb(Y|X) \]
+If $X$ and $Y$ are independent, then $\Ib(X : Y) = 0$ since $\Hb(X|Y) =  \Hb(X)$ since knowing about an event $y \in Y$ does not affect knowing about an event $x \in X$. 
+
+We will now calculate to examples of mutual.
+\begin{example}
+	 Consider the random variables $X$ and $Y$ that represent the following time series:
+	\begin{align*}
+	&X = \{1,0,1,1,0,0\} \\
+	&Y = \{0,1,0,0,1,1\}
+	\end{align*}
+	First, we calculate $\Hb(X)$ as 
+	\[\Hb(X) = -\left(0.5\log_2 0.5 + 0.5 \log_2 0.5\right) = 1.\]
+	Then we calculate 
+	\begin{align*}
+	&\Hb(X | y = 0) = -\left(0.5\log_2 0.5 + 0\right) = 0.5\\
+	&\Hb(X | y = 1) = -(0 + 0.5\log_2 0.5) = 0.5
+	\end{align*}
+	Then, calculating $\Hb(X | Y)$, we get
+	\[\Hb(X | Y) = 0.5\cdot 0.5 + 0.5\cdot 0.5 = 0.5\]
+	and finally
+	\[\Ib(X : Y) = 1 - 0.5 = 0.5.\]
+\end{example}
+\begin{example}
+	 Consider the random variables $X$ and $Y$ that represent the following time series:
+	\begin{align*}
+	&X = \{a,a,b,b,a,a,b,b\} \\
+	&Y = \{c,c,c,c,d,d,d,d\}
+	\end{align*}
+	First, we will write the conditional probabilities:
+	
+	\begin{tabular}{c|cc}
+		$p(x|y)$ & 0 & 1 \\\hline
+		0 & 0.25 & 0.25 \\
+		1 & 0.25 & 0.25
+	\end{tabular}
+
+	Since there are an equal number of $a$'s and $b$'s in $X$, we know that $\Hb(X) = 1$. Then,
+	\begin{align*}
+	&\Hb(X | y = 0) = -\left(0.5\log_2 0.25\right) = 1\\
+	&\Hb(X | y = 1) = -(0.5\log_2 0.25) = 1
+	\end{align*}
+	Then, calculating $\Hb(X | Y)$, we get
+	\[\Hb(X | Y) = 0.5\cdot 1 + 0.5\cdot 1 = 1\]
+	and finally
+	\[\Ib(X : Y) = 1 - 1 = 0.\]
+	Since the mutual information is 0, we can conclude that $X$ and $Y$ are independent. This makes intuitive sense after looking at the definitions of $X$ and $Y$. 
+\end{example}
+\section{Transfer Entropy}
+In this section, we discuss the mathematical definition of transfer entropy and then we discuss how we applied it to the data described in \Cref{sec:data}.
+\subsection{Mathematics of Transfer Entropy}
+As we shift to discussing transfer entropy, we will explicitly consider sequences of random variables $X_t, Y_t$ for $t \in \Z$. We want to capture the idea of how much past instants of $Y_{t-s}$ affect the current value of $X_t$. It was determined that calculating $\Ib(X_t : Y_{t-s})$ wasn't quite right since it failed to take in any shared history between $X$ and $Y$. To remedy this issue, we must condition $X$ on its own history. This leads to the following definition:
+\begin{align*}
+\Tb_{Y\to X}(t) &\equiv \Ib(X_t : Y_{t-1} | X_{t-1}) \\
+&= \Hb(X_t | X_{t-1}) - \Hb(X_t | X_{t-1}, Y_{t-1}).
+\end{align*}
+This is defined for a history length of 1. Here, we call $Y$ the source variable and $X$ the target variable. ``$\Tb_{Y \to X}(t)$ with lag 1 may be interpreted intuitively as the degree
+of uncertainty about current X resolved by past Y and X, over and above the
+degree of uncertainty about current X already resolved by its own past alone.'' \cite[p.~68]{bossomaier2016introduction} We can see that if $\Tb_{Y \to X} = 0$, then $X$ is independent on the past of $Y$ conditional on its own past. 
+
+We can also extend this definition to include longer histories for both $X$ and $Y$ to get a more accurate representation of transfer entropy. Determining the best history lengths is dependent on individual cases. The general formula is 
+\begin{align*}
+\Tb_{Y \to X}^{(k,l)}(t)&\equiv \Ib(X_t : \Yb_{t-1}^{(l)}|\Xb_{t-1}^{(k)}) \\
+&= \Hb(X_t |\Xb_{t-1}^{(k)} ) - \Hb(X_t | \Xb_{t-1}^{(k)}, |\Yb_{t-1}^{(l)})
+\end{align*}
+where
+\[\Ub_t^{(k)} \equiv (U_t, U_{t-1},\ldots, U_{t-k+1})\] 
+is the set of the previous $k$ instances of a variable $\Ub$ including time $t$. 
+
+Finally, we can define transfer entropy with an arbitrary delay $u$ between the source and target variables as 
+\begin{align*}
+\Tb_{Y \to X}^{(k,l)}(t,u)&\equiv \Ib(X_t : \Yb_{t-u}^{(l)}|\Xb_{t-1}^{(k)}) \\
+&= \Hb(X_t |\Xb_{t-1}^{(k)} ) - \Hb(X_t | \Xb_{t-1}^{(k)}, |\Yb_{t-u}^{(l)}).
+\end{align*}
+\subsection{Application of Transfer Entropy}
+We used transfer entropy to define a relation between two generators in the power system data. For each generator $i$, we define $\Delta_i = \{\delta_{it} | t \in \{0, 0.001, \ldots, 146.640\}\}$ as a time series of the generator angle for each generator. Then, for all $0 \leq i,j \leq 327$, we computed 
+\[\max_{0\leq u \leq 50}\left\{\frac{1}{146645}\sum_{t=0}^{146645}\Tb_{\Delta_i \to \Delta_j}^{(1,1)}(t,u)\right\}.\]
+This gave us the maximum transfer entropy, $\Tb_{\Delta_i \to \Delta_j}$, between any two generators $i$ and $j$. If $\Tb_{\Delta_i \to \Delta_j}$ is small, this means that generators $i$ does not influence generator $j$ very much. If $\Tb_{\Delta_i \to \Delta_j}$ is large, then the opposite is true. This data will be what is used throughout the rest of this paper. 
+\section{Persistence}
+Now that we have the maximum transfer entropy between any two generators, we can introduce the ideas of persistence. In general, persistence is a technique that is used to measure some state of a system as a parameter is changed incrementally. In our case, we used two network measures: global clustering coefficient and the size of a cycle basis. These are discussed more in \Cref{sec:networkmeasures}. For now, define a generic function $\func{\Gamma}{\G}{\R}$ where $\G$ is a filtration of graphs. A filtration is an index set of objects $G_i$ such that for all $i$, $G_{i-1} \subseteq G_i$. For, our purposes, we built two filtrations using the transfer entropies we calculated in the previous section. 
+
+For the first filtration $\G_1$, we begin by calculating the minimum and maximum transfer entropies between any two generators. Then, we created 100 evenly spaced values between the maximum and minimum values; call this indexing set $E$. Then, for each $\epsilon \in E$, we add an edge between generator nodes $i$ and $j$ if $\Tb_{\Delta_i \to \Delta_j} \leq \epsilon$. Since edges are only every added, never removed, this defines a valid filtration. Call each graph created this way $G_\epsilon$. We can see that for $\epsilon^* = \max E$, $G_{\epsilon^*}$ will be a fully connected graph since the maximum of $E$ was the maximum pairwise transfer entropy.
+
+For the second filtration $\G_2$, we define begin by defining a new value for each pair of generators. Let $\Lambda_{i,j} = \Lambda_{j,i} \equiv |\Tb_{\Delta_i \to \Delta_j} - \Tb_{\Delta_j \to \Delta_i}|$. If this value is small, then there are two choices. First, both $\Tb_{\Delta_i \to \Delta_j}$ and $\Tb_{\Delta_j \to \Delta_i}$ are small which means that neither generator had much influence on the other. Second, both transfer entropies can be large but there difference is small. This means that they had roughly the same influence on each other. If $\Lambda_{i,j}$ is large, then one of the generators was exerting a much larger influence on the other. Due to the symmetry of the absolute value metric, we can't know which way the influence is flowing. Now, we built a filtration in the same way as $\G_1$ except using the values of $\Lambda_{i,j}$. 
+
+Now that we have constructed a filtration, we can use the function $\Gamma$. For each $G_\epsilon \in \G_1,\G_1$, we compute $\Gamma(G_\epsilon)$. Now, depending on how $\Gamma$ is defined, the interpretation of this will change. We refer to the graphs created in both filtrations as coupling networks. 
+\section{Clustering and Cycles}\label{sec:networkmeasures}
+In this section, we discuss the two network measures we used for the persistent analysis of the coupling networks. First, we will discuss the global clustering coefficient. First we define the local clustering coefficient of a node $v$ as 
+\[C(v) \equiv \frac{\tau_{v,\Delta}}{\tau_v}\]
+where $\tau_v$ all the possible connections between the neighbors of $v$ \cite{opsahl2013triadic}. This can be calculated as $d_v(d_v-1)$ where $d_v$ is the degree of node $v$. Then, $\tau_{v,\Delta}$ is the actual number of connections present between the neighbors of $v$. Since $\tau_{v,\Delta} \leq \tau_v$, we can see that $0\leq C(v) \leq 1$. Then, for a graph $G = (V,E)$, we define the average or global clustering coefficient as 
+\[C(G) \equiv \frac{\sum C(v)}{|V|}.\]
+In a fully connected graph, we have that $C(v) = 1$ for all $v \in V$ so $C(G) = 1$. This means that for the final graph $G_{\epsilon^*}$ in either filtration, we will have $C(G_{\epsilon^*}) = 1$. 
+
+The second measure we used was the length of a cycle basis. A cycle in an undirected graph is a subgraph in which every vertex has an even degree and a cycle is a circuit if each of the vertices are connected and all vertices have degree 2. Then, a cycle basis for an undirected graph is a minimal set of circuits such that any other cycle in the graph can be written as the sum of elements in the cycle basis \cite{kavitha2009cycle}. 
+\section{Results and Analysis}
+\section{Conclusion and Future Work}
+\bibliography{bibliography}
+\end{document}
